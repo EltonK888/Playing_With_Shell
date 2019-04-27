@@ -23,7 +23,7 @@ $  ./mkpics 3 images/pics/pic1.jpg images/pics/pic2.jpg > mkpics.html
 
 Example Usage:
 ```bash
-$  ./filepics.sh images/pics/
+$  ./filepics images/pics/
 ```
 
 3. **`mkpics2.sh`** - Takes in a column number and the directory containing the folders created by `filepics.sh` and outputs to stdout an html file the images in a table with the number of columns. This can be redirected into an html file.
