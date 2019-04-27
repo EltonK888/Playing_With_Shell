@@ -1,0 +1,46 @@
+#!/bin/sh
+if [ "$1" != "" ] #check if there is a positional parameter
+then
+    column=$1 # get the number of columns
+    shift
+    [ "$column" -gt 0 ] 2> /dev/null
+    if [ "$?" -eq 0 ] # only execute if a valid column number was passed (>0)
+    then
+        echo "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
+        echo "<html>"
+        echo "	<head>"
+        echo "		<title>Pictures</title>"
+        echo "	</head>"
+        echo "\n"
+        echo "	<body>"
+        echo "		<h1>Pictures</h1>"
+        echo "		<table>"
+        while [ "$1" != "" ] # loop until no more positional parameters
+        do
+            echo "			<tr>"
+            i=1 # used to keep track of which column we insert the image at
+            while [ "$i" -le $column ] && [ "$1" != "" ] #create a row of images and stop when no more positional parameters or too many columns
+            do
+                file_type=`file -b "$1" | cut -d',' -f1` # determine file type
+                if [ "$file_type" = "JPEG image data" ] #if the file is a JPEG
+                then
+                    image=`echo '"'"$1"'"'` #put quotes around the image to take care of spaces
+                    echo "				<td><img src="$image" height=100></td>"
+                    shift
+                    i=`expr $i + 1` # increment i to keep track of which column we inserted the image
+                else #else exit code, write to stderr
+                    echo "Error code $?, $1 is not a JPEG" 1>&2
+                    shift
+                fi
+            done
+            echo "			</tr>"
+        done
+        echo "		</table>"
+        echo "	</body>"
+        echo "</html>"
+    else
+        echo "Exit code $?, invalid column entered" 1>&2
+    fi
+else
+    echo "No positional parameters entered, mkpics.sh takes a column number and images to be outputted to the html file" 1>&2
+fi

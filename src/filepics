@@ -1,0 +1,49 @@
+#!/bin/sh
+if [ "$#" -gt 1 ] # only 1 argument should be passed, a directory
+then
+	echo "filepics.sh only takes 1 directory argument" 1>&2
+elif [ "$1" != "" ] #check to see if any positional parameter is passed
+then
+	for file in "$1"/* # loop for each file in the directory
+	do
+		if [ -f "$file" ] #script should only work on files, not subdirectories
+		then
+			file_type=`file -b "$file" | cut -d',' -f1` # determine the file type
+			if [ "$file_type" = "JPEG image data" ] # only work with JPEG files
+			then
+				year=`exiftime -tg "$file" | cut -d' ' -f3 | cut -d':' -f1` 2>/dev/null # determine the year using exiftime
+				if [ $? -eq 0 ] && [ "$year" -eq "$year" 2> /dev/null ] # determine if a proper year was extracted
+				then
+					month=`exiftime -tg "$file" | cut -d' ' -f3 | cut -d':' -f2` 2>/dev/null # determine the month using exiftime
+					if [ $? -eq 0 ] && [ "$month" -eq "$month" 2> /dev/null ] # determine if a proper month was extracted
+					then
+						if [ -d "$year" ] # if the year directory exists
+						then
+							if [ -d "$year/$month" ] # if year and month directories exist then just copy the file to the correct directory
+							then
+								cp "$file" ./$year/$month
+							else # if year exists but not month directory, make a month directory in the given year and copy the file there
+								mkdir "$year"/"$month"
+								cp "$file" ./$year/$month
+							fi
+						else # if year directory doesn't exist then month directory also doesnt
+							mkdir "$year" # make a new year and month directory and copy the file there
+							mkdir "$year"/"$month"
+							cp "$file" ./$year/$month
+						fi
+					else
+						echo "error code $? Could not find month exiftime data" 1>&2
+					fi
+				else
+					echo "error code $? Could not find year exiftime data" 1>&2
+				fi
+			else # if file isn't JPEG
+				echo "error code $? file not a JPEG" 1>&2
+			fi
+		else
+			echo "$file is a directory not a file" 1>&2
+		fi
+	done
+else
+	echo "No valid positional parameters entered" 1>&2
+fi

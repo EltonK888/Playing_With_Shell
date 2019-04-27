@@ -1,0 +1,83 @@
+#!/bin/sh
+if [ "$#" -gt 2 ] || [ "$#" -eq 1 ] # if arguments are passed but not the correct number (2)
+then
+    echo "mkpics2.sh takes only two arguments, column number and a directory" 1>&2
+elif [ "$1" != "" ] #check if any valid positional parameters entered
+then
+    column=$1 # get the column number
+    shift
+    [ "$column" -gt 0 ] 2> /dev/null
+    if [ "$?" -eq 0 ] #check if a valid column number was entered
+    then
+        echo "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
+        echo "<html>"
+        echo "	<head>"
+        echo "		<title>Pictures</title>"
+        echo "	</head>"
+        echo "\n"
+        echo "  <body>"
+        echo "		<h1>Pictures</h1>"
+        dircheck=0 # used to check if any valid directory was found. If 0 then makes empty table
+        for dir in "$1"/*/ #loop for every directory in the directory passed in
+        do
+            year=`echo $dir | rev | cut -d'/' -f2 | rev` # get the name of the subdirectory
+            echo "$year" | grep ^[0-9][0-9][0-9][0-9]$ 1>/dev/null
+            if [ "$?" -eq 0 ] #check if the subdirectory is a valid year directory
+            then
+                dircheck=1 # found a valid directory to make a table 
+                echo "\n"
+                echo "          <h2>$year</h2>"
+                echo "		    <table>"
+                echo "              <tr>"
+                count=1 # count keeps track of number of columns entered
+                for month in "$dir"*/ #loop for every image for every month in year
+                do
+                    monthchk=`echo $month | rev | cut -d'/' -f2 | rev` # get name of the month subdirectory
+                    echo "$monthchk" | grep ^[0-9][0-9]$ 1>/dev/null
+                    if [ "$?" -eq 0 ] #check if valid month directory
+                    then
+                        for image in "$month"*
+                        do
+                            file_type=`file -b "$image" | cut -d',' -f1` # check the file type of each file
+                            if [ "$file_type" = "JPEG image data" ] #only include files that are jpeg
+                            then
+                                image=`echo '"'"$image"'"'` #add quotes around to include spaces
+                                if [ "$count" -gt "$column" ] #case where we need to put image in column 1 because column restriction
+                                then
+                                    echo "              </tr>"
+                                    echo "              <tr>"
+                                    echo "                  <td><img src="$image" height=100></td>"
+                                    count=2 # reset counter to 2 because we've already inserted a picture in a new column
+                                else #else we just add the picture to the next column
+                                    echo "                  <td><img src="$image" height=100></td>"
+                                    count=`expr $count + 1` # increase the count so we know we've inserted another image in a column
+                                fi
+                            else
+                                echo "$image is not a JPEG" 1>&2
+                            fi
+                        done
+                    else
+                        echo "Error code $?, $monthchk is not a valid month directory" 1>&2
+                    fi
+                done
+                echo "              </tr>"
+                echo "           </table>"
+            else
+                echo "Error code $?, $year is not a valid year directory" 1>&2
+            fi
+        done
+        if [ "$dircheck" -ne 1 ] #if no valid directory was found then make empty table
+        then
+            echo "          <table>"
+            echo "              <tr>"
+            echo "              </tr>"
+            echo "          </table>"
+        fi
+        echo "  </body>"
+        echo "</html>"
+    else #case where invalid column number
+        echo "Exit code $?, invalid columns entered" 1>&2
+    fi
+else #no parameters passed
+    echo "No positional parameters entered. mkpics2.sh takes only two arguments, a column number and directory" 1>&2
+fi
